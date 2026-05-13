@@ -13,6 +13,7 @@ use wry::{
 
 #[derive(Debug)]
 enum UserEvent {
+    Navigate(String),
     OpenPopup(String),
     ClosePopup,
 }
@@ -37,17 +38,42 @@ fn main() -> wry::Result<()> {
     std::fs::create_dir_all(&data_dir).ok();
     let mut web_context = WebContext::new(Some(data_dir));
 
-    // OAuth popups get opened as real windows — send URL through event loop
+    // Navigation bar — Chat and Code buttons
+    let nav_bar = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    gtk::prelude::WidgetExt::set_margin_start(&nav_bar, 8);
+    gtk::prelude::WidgetExt::set_margin_top(&nav_bar, 4);
+    gtk::prelude::WidgetExt::set_margin_bottom(&nav_bar, 4);
+
+    let chat_btn = gtk::Button::with_label("Chat");
+    let code_btn = gtk::Button::with_label("Code");
+
+    let chat_proxy = proxy.clone();
+    gtk::prelude::ButtonExt::connect_clicked(&chat_btn, move |_| {
+        let _ = chat_proxy.send_event(UserEvent::Navigate("https://claude.ai".into()));
+    });
+    let code_proxy = proxy.clone();
+    gtk::prelude::ButtonExt::connect_clicked(&code_btn, move |_| {
+        let _ = code_proxy.send_event(UserEvent::Navigate("https://claude.ai/code".into()));
+    });
+
+    gtk::prelude::BoxExt::pack_start(&nav_bar, &chat_btn, false, false, 0);
+    gtk::prelude::BoxExt::pack_start(&nav_bar, &code_btn, false, false, 0);
+    gtk::prelude::BoxExt::pack_start(vbox, &nav_bar, false, false, 0);
+
     let popup_proxy = proxy.clone();
     let webview = WebViewBuilder::new_with_web_context(&mut web_context)
         .with_url("https://claude.ai")
         .with_new_window_req_handler(move |url, _features| {
-            let _ = popup_proxy.send_event(UserEvent::OpenPopup(url));
+            eprintln!("[new-window] {}", url);
+            if url.starts_with("https://claude.ai") {
+                let _ = popup_proxy.send_event(UserEvent::Navigate(url));
+            } else {
+                let _ = popup_proxy.send_event(UserEvent::OpenPopup(url));
+            }
             NewWindowResponse::Deny
         })
         .build_gtk(vbox)?;
 
-    // GTK Box container auto-resizes the webview — no manual resize handler needed
     gtk::prelude::WidgetExt::show_all(vbox);
 
     // Grab the underlying webkit2gtk view so popup can share the web process
@@ -62,6 +88,9 @@ fn main() -> wry::Result<()> {
         let _ = &web_context;
 
         match event {
+            Event::UserEvent(UserEvent::Navigate(url)) => {
+                let _ = webview.load_url(&url);
+            }
             Event::UserEvent(UserEvent::OpenPopup(url)) => {
                 popup_webview.lock().unwrap().take();
                 popup_window.lock().unwrap().take();
