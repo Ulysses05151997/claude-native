@@ -16,13 +16,18 @@ Ubuntu 24.04, Intel HD 3000 (AMD Radeon disabled), 16GB RAM. Not a hobbyist — 
 `/home/isaulysses/projects/claude-desktop/`
 
 ## Architecture
-- `src-tauri/src/main.rs` — entire application
-- Dependencies: tao 0.34, wry 0.54, gtk 0.18, urlencoding 2, open 5
+- `src-tauri/src/main.rs` — entire application (107 lines)
+- Dependencies: tao 0.34, wry 0.54, gtk 0.18, dirs 6, webkit2gtk 2.0.2, urlencoding 2, open 5
 - NO Tauri framework — uses the underlying libraries directly
 - Builds with `cargo build` from `src-tauri/`
 
-## Current State (May 2026)
-Working proof of concept. Chat works. Known bugs documented in CLAUDE_NATIVE_HANDOVER.md.
+## Current State (May 13, 2026)
+All four phases complete:
+- **Phase 1** — Single webview architecture. Removed triple webview + native tab bar. claude.ai handles its own Chat/Cowork/Code navigation.
+- **Phase 2** — Persistent cookie storage at `~/.local/share/claude-native/webdata/`. Login survives app restarts.
+- **Phase 3** — Google OAuth popup handling. Real popup window with `with_related_view` shares web process/cookies. Navigation handler detects redirect back to claude.ai, closes popup, reloads main webview.
+- **Phase 4** — Resize fix. Switched from `gtk::Fixed` + manual `set_bounds` to `gtk::Box` container with `pack_start(expand=true)`. GTK handles all layout automatically — maximize, restore, manual resize all work correctly.
+
 ## Rules for Claude Code
 
 ### DO
@@ -57,4 +62,4 @@ cargo build 2>&1
 ```
 
 ## Session Log
-<!-- Claude Code: append a one-line summary after each session -->
+- 2026-05-13: Phases 1-4 completed in one session. 225 lines → 107 lines.
