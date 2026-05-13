@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Desktop</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #16213e;
+      height: 46px;
+      overflow: hidden;
+      display: flex;
+    }
+    .tab {
+      background: none;
+      border: none;
+      color: #8892a8;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .tab:hover { color: #c4c9d6; background: rgba(255,255,255,0.05); }
+    .tab.active { color: #e8a87c; border-bottom-color: #e8a87c; }
+  </style>
+</head>
+<body>
+  <button class="tab active" data-tab="chat">Chat</button>
+  <button class="tab" data-tab="cowork">Cowork</button>
+  <button class="tab" data-tab="code">Code</button>
+  <script>
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        if (window.__TAURI__) {
+          window.__TAURI__.core.invoke('switch_tab', { tab: tab.dataset.tab });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
